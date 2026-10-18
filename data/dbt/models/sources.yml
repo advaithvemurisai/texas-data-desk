@@ -1,0 +1,16 @@
+version: 2
+
+# Raw snapshots written by tdd-ingest. Every column is text; staging models type and clean them.
+sources:
+  - name: raw
+    meta:
+      external_location: "read_parquet('data/raw/{name}/{{ var('snapshot') }}/*.parquet', union_by_name = true)"
+    tables:
+      - name: dallas_311
+      - name: dallas_police
+      - name: dallas_shelter
+      - name: austin_311
+      - name: austin_nibrs
+      - name: sa_311
+      - name: sa_offenses
+      - name: houston_nibrs

@@ -59,9 +59,15 @@ These are non-negotiable. If a task seems to require breaking one, stop and ask.
 
 ## Commands
 
-Nothing is set up yet; these are the planned tools. Update this section as each one lands.
+Update this section as each tool lands. Run everything from the repo root.
 
-- Python: `uv sync`, `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`, `uv run pyright`
-- dbt: `uv run dbt build --project-dir data/dbt`
+- Python (uv workspace, Python 3.12): `uv sync`, `uv run pytest` (offline; live portal tests: `uv run pytest -m live`), `uv run ruff check .`, `uv run ruff format .`, `uv run pyright`
+- Ingest: `uv run tdd-ingest list`, `uv run tdd-ingest run <dataset_id>… | --all [--date YYYY-MM-DD]`, `uv run tdd-ingest profile <dataset_id> [--snapshot DATE]`, `uv run tdd-ingest pull-archive` (restores the San Antonio 311 weekly archive from the `sa311-archive` GitHub release; needs `gh`)
+  - Snapshots land in `data/raw/<dataset_id>/<date>/` with `_manifest.json`; a date that already exists is refused. Houston files the portal blocks go in `data/manual/houston/` (paths in `data/registry.yaml`).
+  - Optional `SOCRATA_APP_TOKEN` in `.env` (see `.env.example`).
+- dbt: `uv run dbt build --project-dir data/dbt --profiles-dir data/dbt --vars '{snapshot: YYYY-MM-DD}'` (skeleton only; no staging models yet)
+
+Planned, not set up yet:
+
 - Frontend (`apps/web`): `pnpm install`, `pnpm dev`, `pnpm lint`, `pnpm test` (Vitest), `pnpm exec playwright test`
 - Evals: 10-question smoke test in CI; full eval only per milestone (free-tier quotas)

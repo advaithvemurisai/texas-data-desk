@@ -1,0 +1,8 @@
+# Run dbt from the repo root: uv run dbt <cmd> --project-dir data/dbt --profiles-dir data/dbt
+texas_data_desk:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: data/warehouse.duckdb
+      threads: 4

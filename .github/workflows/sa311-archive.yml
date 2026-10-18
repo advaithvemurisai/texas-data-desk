@@ -1,0 +1,63 @@
+# San Antonio 311 only publishes the past 365 days, so each weekly pull is archived as an
+# asset on the sa311-archive release. Restore locally with `uv run tdd-ingest pull-archive`.
+name: sa311-archive
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sa311-archive
+  cancel-in-progress: false
+
+env:
+  RELEASE: sa311-archive
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen --no-dev
+
+      - name: Pull San Antonio 311
+        run: uv run tdd-ingest run sa_311
+
+      - name: Package snapshot
+        id: pkg
+        run: |
+          dir=$(ls -d data/raw/sa_311/*/ | sort | tail -1)
+          day=$(basename "$dir")
+          tar -cf "sa_311-$day.tar" -C data/raw/sa_311 "$day"
+          cp "$dir/_manifest.json" "sa_311-$day.manifest.json"
+          echo "day=$day" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure release exists
+        run: |
+          gh release view "$RELEASE" > /dev/null 2>&1 || gh release create "$RELEASE" \
+            --title "San Antonio 311 weekly archive" \
+            --notes "Weekly raw snapshots of San Antonio 311 (rolling 365-day source). Assets are never replaced."
+
+      - name: Compare with previous week
+        run: |
+          prev=$(gh release view "$RELEASE" --json assets \
+            -q '[.assets[].name | select(endswith(".manifest.json"))] | sort | last // ""')
+          if [ -n "$prev" ]; then
+            gh release download "$RELEASE" --pattern "$prev" --dir prev
+            uv run tdd-ingest compare-manifests "prev/$prev" "sa_311-${{ steps.pkg.outputs.day }}.manifest.json" --max-drop 0.2
+          else
+            echo "First archive; nothing to compare."
+          fi
+
+      - name: Upload
+        run: |
+          gh release upload "$RELEASE" \
+            "sa_311-${{ steps.pkg.outputs.day }}.tar" \
+            "sa_311-${{ steps.pkg.outputs.day }}.manifest.json"

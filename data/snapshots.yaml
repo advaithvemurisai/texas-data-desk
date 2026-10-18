@@ -1,0 +1,9 @@
+# Which raw snapshot (data/raw/<dataset_id>/<date>/) each environment reads.
+# Edited by hand; ingest never touches this file.
+#
+# eval: frozen once the week-1 checks pass. Gold SQL runs only on it and it never changes
+#       (CLAUDE.md rule 3). Changing an eval date needs a DECISIONS.md entry.
+# live: the serving snapshot, moved forward after each weekly refresh.
+
+eval: {}
+live: {}

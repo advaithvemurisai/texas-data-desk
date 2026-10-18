@@ -1,0 +1,19 @@
+name: texas_data_desk
+version: "0.1.0"
+config-version: 2
+profile: texas_data_desk
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: target
+clean-targets: [target]
+
+# Raw snapshot date to read (data/raw/<dataset_id>/<snapshot>/). Pass with
+# --vars '{snapshot: 2026-10-17}'; per-dataset dates from data/snapshots.yaml come later.
+vars:
+  snapshot: "unset"
+
+models:
+  texas_data_desk:
+    +materialized: view

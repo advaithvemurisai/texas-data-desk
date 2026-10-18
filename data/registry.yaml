@@ -1,0 +1,127 @@
+# Datasets in scope for v1. Drives ingest now, and dbt and the agents later.
+# Source ids, counts and columns were checked live on 2026-10-17.
+#
+# date_fields: candidate columns for the analysis date (crime: occurrence; 311: creation),
+#   first one present wins. Confirm each during the week-1 checks.
+# pii_columns: filled in by the week-1 personal-data check; dbt staging drops them.
+# Never copy eval questions, gold SQL or eval results in here (CLAUDE.md rule 3).
+
+datasets:
+  - id: dallas_311
+    city: dallas
+    topic: "311"
+    title: 311 Service Requests October 1, 2020 to Present
+    grain: one row per service request
+    date_fields: [created_date]
+    coverage: {kind: full, start: 2020-10-01}
+    source: {type: socrata, domain: www.dallasopendata.com, dataset_id: d7e7-envw}
+    portal_url: https://www.dallasopendata.com/d/d7e7-envw
+    license: PDDL
+    pii_columns: []
+
+  - id: dallas_police
+    city: dallas
+    topic: crime
+    title: Police Incidents
+    grain: "~1.26 rows per incident; dedupe at incident + offense level"
+    date_fields: [date1]  # date1 looks like occurrence start; confirm against the data dictionary
+    coverage: {kind: full}
+    source: {type: socrata, domain: www.dallasopendata.com, dataset_id: qv6i-rri7}
+    portal_url: https://www.dallasopendata.com/d/qv6i-rri7
+    license: ODC-BY
+    pii_columns: []
+    notes: Publishes nibrs_crime, nibrs_code, nibrs_group and related NIBRS fields.
+
+  - id: dallas_shelter
+    city: dallas
+    topic: shelter
+    title: Dallas Animal Shelter Data Fiscal Year 2023 - 2026
+    grain: one row per animal intake/outcome activity
+    date_fields: [intake_date]
+    coverage: {kind: full, start: 2023-10-01}
+    source: {type: socrata, domain: www.dallasopendata.com, dataset_id: uyte-zi7f}
+    portal_url: https://www.dallasopendata.com/d/uyte-zi7f
+    pii_columns: []
+
+  - id: austin_311
+    city: austin
+    topic: "311"
+    title: Austin 311 Public Data
+    grain: one row per service request
+    date_fields: [sr_created_date]
+    coverage: {kind: full, start: 2014-01-01}
+    source: {type: socrata, domain: datahub.austintexas.gov, dataset_id: xwdj-i9he}
+    portal_url: https://datahub.austintexas.gov/d/xwdj-i9he
+    license: Public Domain
+    pii_columns: []
+
+  - id: austin_nibrs
+    city: austin
+    topic: crime
+    title: NIBRS Group A Offense Crimes
+    grain: one row per offense
+    date_fields: [occurred_date]
+    coverage: {kind: full, start: 2019-01-01}  # snapshot 2026-10-17: 2019-01-01 … 2026-09-30
+    source: {type: socrata, domain: datahub.austintexas.gov, dataset_id: i7fg-wrk5}
+    portal_url: https://datahub.austintexas.gov/d/i7fg-wrk5
+    pii_columns: []
+
+  - id: sa_311
+    city: san_antonio
+    topic: "311"
+    title: 311 Service Calls (All Service Calls)
+    grain: one row per case; rolling window, archived weekly
+    date_fields: [OPENEDDATETIME]
+    coverage: {kind: rolling_365d}
+    source:
+      type: ckan
+      base_url: https://data.sanantonio.gov
+      package: service-calls
+      resource_name: ALL SERVICE CALLS
+      resource_id: 20eb6d22-7eac-425a-85c1-fdb365fd3cd7
+    portal_url: https://data.sanantonio.gov/dataset/service-calls
+    license: CC-BY
+    pii_columns: []
+    notes: >-
+      "Data represents the past 365 days of the last upload date." The separate
+      311-all-service-calls package is an ArcGIS mirror; this is the city's own upload.
+
+  - id: sa_offenses
+    city: san_antonio
+    topic: crime
+    title: SAPD Offenses
+    grain: one row per offense (to confirm)
+    date_fields: [Report_Date]  # check whether this is occurrence or report date; DateTime looks like the extract date
+    coverage: {kind: full, start: 2023-01-01}
+    source:
+      type: ckan
+      base_url: https://data.sanantonio.gov
+      package: sapd-offenses
+      resource_name: SAPD Offenses
+      resource_id: f36bb931-8fb4-481c-83d9-a3589108bb20
+    portal_url: https://data.sanantonio.gov/dataset/sapd-offenses
+    license: CC-BY
+    pii_columns: []
+
+  - id: houston_nibrs
+    city: houston
+    topic: crime
+    title: HPD NIBRS Public View (yearly files)
+    grain: one row per offense line; sum Offense Count, do not count rows
+    # Headers renamed from the 2025 file on (RMSOccurrenceDate -> Occurrence Date,
+    # OffenseCount -> Offense Count); 2019–2024 use the old names.
+    date_fields: [RMSOccurrenceDate, Occurrence Date]
+    coverage: {kind: ends_at, start: 2019-01-01, end: 2026-06-30}
+    source:
+      type: csv
+      files:
+        - {label: "2019", url: "https://www.houstontx.gov/police/cs/xls/NIBRSPublicView2019.csv", manual_path: data/manual/houston/NIBRSPublicView2019.csv}
+        - {label: "2020", url: "https://www.houstontx.gov/police/cs/xls/NIBRSPublicView2020.csv", manual_path: data/manual/houston/NIBRSPublicView2020.csv}
+        - {label: "2021", url: "https://www.houstontx.gov/police/cs/xls/NIBRSPublicView2021.csv", manual_path: data/manual/houston/NIBRSPublicView2021.csv}
+        - {label: "2022", url: "https://www.houstontx.gov/police/cs/xls/NIBRSPublicView2022.csv", manual_path: data/manual/houston/NIBRSPublicView2022.csv}
+        - {label: "2023", url: "https://www.houstontx.gov/police/cs/xls/NIBRSPublicView2023.csv", manual_path: data/manual/houston/NIBRSPublicView2023.csv}
+        - {label: "2024", url: "https://www.houstontx.gov/police/cs/xls/NIBRSPublicView2024.csv", manual_path: data/manual/houston/NIBRSPublicView2024.csv}
+        - {label: "2025", url: "https://www.houstontx.gov/police/cs/xls/NIBRSPublicView2025.csv", manual_path: data/manual/houston/NIBRSPublicView2025.csv}
+        - {label: "2026", url: "https://www.houstontx.gov/police/cs/xls/NIBRSPublicView2026.csv", manual_path: data/manual/houston/NIBRSPublicView2026.csv}
+    portal_url: https://www.houstontx.gov/police/cs/Monthly_Crime_Data_by_Street_and_Police_Beat.htm
+    pii_columns: []
