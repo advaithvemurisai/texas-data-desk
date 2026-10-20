@@ -21,3 +21,18 @@ Why key choices were made. Don't reverse any of these without a new entry explai
 **Decision:** the crime unit is offenses (the NIBRS standard), not incidents and not rows. Austin uses NIBRS Group A Offense Crimes (`i7fg-wrk5`), not the older Crime Reports dataset. Houston sums `Offense Count`. Dallas dedupes at incident + offense level. Cross-city comparisons use only the comparable-offense list in `definitions.md`.
 **Why:** each city publishes crime at a different grain. Dallas has ~1.26 rows per incident; Houston rows carry a count field. NIBRS offenses are the only unit that all four cities can be mapped to consistently, and they match how Houston and San Antonio already publish.
 **Consequences:** counting incidents or raw rows is wrong for this project, even when it is simpler. Gold SQL and the verifier both follow the offense rule.
+
+## 2026-10-18 · San Antonio crime is dated by report date
+**Decision:** San Antonio offenses are dated by `Report_Date`, the only date SAPD publishes. Every other city uses occurrence date. Answers that include San Antonio crime say so.
+**Why:** the data behaves like a report date: no rows before the 2023-01-01 window start, and no spike on the 1st of the month (3.23% of rows, the same as Austin's report date; Austin's occurrence date is 4.25%). Dropping San Antonio from crime comparisons would cost one of four cities for a small effect. In Austin, which has both dates, yearly totals by report vs occurrence date differ by ≤1.1% for 2023–2025.
+**Consequences:** this is an exception to "crime is dated by occurrence date" (CLAUDE.md rule 4). Monthly and day-of-week questions for San Antonio describe when offenses were reported, not when they happened. Evidence is in `data/quirks/san_antonio.md`.
+
+## 2026-10-18 · "Total crime" means NIBRS Group A
+**Decision:** any all-offense total ("total crime", "all offenses") counts NIBRS Group A only. Dallas filters `nibrs_group = 'A'`; Houston drops classes `90A`–`90Z`.
+**Why:** Austin and San Antonio publish only Group A, while Dallas and Houston also include Group B (DUI, trespass, disorderly conduct, …; ~11k Dallas and ~35k Houston offenses in 2024). Mixed totals would inflate Dallas and Houston.
+**Consequences:** Dallas has no NIBRS total before 2017 (NIBRS fields are blank 2014–2016). Cross-city comparisons still use only the comparable-offense list in `data/definitions.md`.
+
+## 2026-10-18 · Austin shelter data not used; shelter stays Dallas-only
+**Decision:** v1 does not use Austin Animal Center data.
+**Why:** it is split at a system change on 2025-05-05 (ShelterBuddy). The legacy and new datasets use different intake categories, and the new one adds ~4.3k "Community Animal - Program" intakes, so there is no consistent series across that date. Only ~17 months exist after the switch.
+**Revisit if:** v2 adds shelter questions limited to post-May-2025 data (the new datasets refresh hourly), or the city publishes a crosswalk between the two systems.

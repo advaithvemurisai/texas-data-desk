@@ -359,15 +359,15 @@ The two risks that matter most are wrong definitions and an untrustworthy eval. 
 
 **Week-1 checks**
 
-- [ ] Write `definitions.md` and the comparable-offense mapping
-- [ ] Download Houston's 2023–2025 crime files manually and confirm coverage
-- [ ] Check coverage of Austin's NIBRS Group A dataset
-- [ ] Count records per month for every city × topic to find gaps
-- [ ] Check whether Dallas publishes NIBRS offense fields
-- [ ] Find the cause of Austin's 2023 311 jump
-- [ ] List the personal-data columns to drop in each dataset
-- [ ] Check whether Austin publishes usable animal shelter data
-- [ ] Recheck Houston 311 services
+- [x] Write `definitions.md` and the comparable-offense mapping
+- [x] Download Houston's 2023–2025 crime files manually and confirm coverage
+- [x] Check coverage of Austin's NIBRS Group A dataset
+- [x] Count records per month for every city × topic to find gaps
+- [x] Check whether Dallas publishes NIBRS offense fields
+- [x] Find the cause of Austin's 2023 311 jump
+- [x] List the personal-data columns to drop in each dataset
+- [x] Check whether Austin publishes usable animal shelter data
+- [x] Recheck Houston 311 services
 - [ ] Confirm free-tier limits in AI Studio, the Groq console and Cerebras
 - [ ] Check App Runner background-CPU behavior and that AWS credits cover hosting
 - [ ] Run the 10-question test on the free candidate models

@@ -1,9 +1,13 @@
 # Datasets in scope for v1. Drives ingest now, and dbt and the agents later.
 # Source ids, counts and columns were checked live on 2026-10-17.
 #
-# date_fields: candidate columns for the analysis date (crime: occurrence; 311: creation),
-#   first one present wins. Confirm each during the week-1 checks.
-# pii_columns: filled in by the week-1 personal-data check; dbt staging drops them.
+# date_fields: the analysis date column (crime: occurrence; 311: creation), first one
+#   present wins. Confirmed in the week-1 checks on the 2026-10-17 snapshots; reasons
+#   are in data/quirks/<city>.md. Category and offense definitions: data/definitions.md.
+# pii_columns: dropped by dbt staging (CLAUDE.md rule 2). Two kinds, both dropped:
+#   personal data (names, demographics, addresses, free text, person/staff ids) and
+#   location finer than ZIP or council district (coordinates, street parts, census
+#   tract/block group, beat). Row ids needed for dedupe (incident numbers) are kept.
 # Never copy eval questions, gold SQL or eval results in here (CLAUDE.md rule 3).
 
 datasets:
@@ -17,31 +21,64 @@ datasets:
     source: {type: socrata, domain: www.dallasopendata.com, dataset_id: d7e7-envw}
     portal_url: https://www.dallasopendata.com/d/d7e7-envw
     license: PDDL
-    pii_columns: []
+    pii_columns:
+      - address        # street address or intersection
+      - lat_location   # point coordinates
 
   - id: dallas_police
     city: dallas
     topic: crime
     title: Police Incidents
-    grain: "~1.26 rows per incident; dedupe at incident + offense level"
-    date_fields: [date1]  # date1 looks like occurrence start; confirm against the data dictionary
-    coverage: {kind: full}
+    grain: "one row per incident × offense line × person (servnumid); dedupe on (incidentnum, nibrs_code)"
+    date_fields: [date1]  # occurrence start; date1 <= reporteddate in 99.995% of rows
+    # Volume starts June 2014 (8.3k rows/month vs. <600 before); the 690 rows dated
+    # 1967–2013 are back-dated occurrences and are filtered in staging.
+    coverage: {kind: full, start: 2014-06-01}
     source: {type: socrata, domain: www.dallasopendata.com, dataset_id: qv6i-rri7}
     portal_url: https://www.dallasopendata.com/d/qv6i-rri7
     license: ODC-BY
-    pii_columns: []
-    notes: Publishes nibrs_crime, nibrs_code, nibrs_group and related NIBRS fields.
+    pii_columns:
+      # personal data
+      - incident_address
+      - apt
+      - comprace
+      - compethnicity
+      - compsex
+      - mo                 # narrative free text; contains names and street addresses
+      - ro1name
+      - ro2name
+      - ro1badge
+      - ro2badge
+      - reptoff
+      - assoffbadge
+      - reviewbadgenum
+      - elenum
+      # finer than ZIP / council district
+      - x_coordinate
+      - y_cordinate
+      - geocoded_column
+      - beat
+      - ra
+      - taag
+    notes: >-
+      NIBRS fields (nibrs_code, nibrs_crime, nibrs_group …) are filled from 2017 on;
+      2014–2016 rows have them blank.
 
   - id: dallas_shelter
     city: dallas
     topic: shelter
     title: Dallas Animal Shelter Data Fiscal Year 2023 - 2026
-    grain: one row per animal intake/outcome activity
+    grain: one row per intake (impound_number unique); an animal can have many intakes
     date_fields: [intake_date]
     coverage: {kind: full, start: 2023-10-01}
     source: {type: socrata, domain: www.dallasopendata.com, dataset_id: uyte-zi7f}
     portal_url: https://www.dallasopendata.com/d/uyte-zi7f
-    pii_columns: []
+    pii_columns:
+      - source_id               # person id of the owner/finder (P-numbers)
+      - staff_id                # staff initials
+      - receipt_number          # links to a person's payment
+      - additional_information  # free text (staff initials, notes)
+      - census_tract            # finer than council district
 
   - id: austin_311
     city: austin
@@ -53,18 +90,32 @@ datasets:
     source: {type: socrata, domain: datahub.austintexas.gov, dataset_id: xwdj-i9he}
     portal_url: https://datahub.austintexas.gov/d/xwdj-i9he
     license: Public Domain
-    pii_columns: []
+    pii_columns:
+      - sr_location                 # full street address
+      - sr_location_street_number
+      - sr_location_street_name
+      - sr_location_x
+      - sr_location_y
+      - sr_location_lat
+      - sr_location_long
+      - sr_location_lat_long
+      - sr_location_map_page
+      - sr_location_map_tile
 
   - id: austin_nibrs
     city: austin
     topic: crime
     title: NIBRS Group A Offense Crimes
-    grain: one row per offense
+    grain: one row per offense (offenseid unique; primary_key is the incident number)
     date_fields: [occurred_date]
     coverage: {kind: full, start: 2019-01-01}  # snapshot 2026-10-17: 2019-01-01 … 2026-09-30
     source: {type: socrata, domain: datahub.austintexas.gov, dataset_id: i7fg-wrk5}
     portal_url: https://datahub.austintexas.gov/d/i7fg-wrk5
-    pii_columns: []
+    pii_columns:
+      - victim_gender
+      - victim_age_range
+      - victim_race_ethnicity
+      - census_block_group  # finer than ZIP / council district
 
   - id: sa_311
     city: san_antonio
@@ -81,17 +132,24 @@ datasets:
       resource_id: 20eb6d22-7eac-425a-85c1-fdb365fd3cd7
     portal_url: https://data.sanantonio.gov/dataset/service-calls
     license: CC-BY
-    pii_columns: []
+    pii_columns:
+      - OBJECTDESC  # full street address
+      - XCOORD
+      - YCOORD
     notes: >-
-      "Data represents the past 365 days of the last upload date." The separate
+      "Data represents the past 365 days of the last upload date." The window is in the
+      file (Report Starting Date … Report Ending Date); ~3% of rows were opened before it
+      and are filtered for last-12-months questions. The separate
       311-all-service-calls package is an ArcGIS mirror; this is the city's own upload.
 
   - id: sa_offenses
     city: san_antonio
     topic: crime
     title: SAPD Offenses
-    grain: one row per offense (to confirm)
-    date_fields: [Report_Date]  # check whether this is occurrence or report date; DateTime looks like the extract date
+    grain: one row per offense (Report_ID + NIBRS_Code_Name is unique in all but 27 rows)
+    # Report_Date is a REPORT date (see quirks/san_antonio.md and DECISIONS.md
+    # 2026-10-18); it is the only date. DateTime is the extract date (one value).
+    date_fields: [Report_Date]
     coverage: {kind: full, start: 2023-01-01}
     source:
       type: ckan
@@ -101,7 +159,7 @@ datasets:
       resource_id: f36bb931-8fb4-481c-83d9-a3589108bb20
     portal_url: https://data.sanantonio.gov/dataset/sapd-offenses
     license: CC-BY
-    pii_columns: []
+    pii_columns: []  # no personal or sub-ZIP columns
 
   - id: houston_nibrs
     city: houston
@@ -109,7 +167,8 @@ datasets:
     title: HPD NIBRS Public View (yearly files)
     grain: one row per offense line; sum Offense Count, do not count rows
     # Headers renamed from the 2025 file on (RMSOccurrenceDate -> Occurrence Date,
-    # OffenseCount -> Offense Count); 2019–2024 use the old names.
+    # OffenseCount -> Offense Count); 2019–2024 use the old names. Dates are M/D/YYYY
+    # through 2025 and ISO YYYY-MM-DD in the 2026 file.
     date_fields: [RMSOccurrenceDate, Occurrence Date]
     coverage: {kind: ends_at, start: 2019-01-01, end: 2026-06-30}
     source:
@@ -124,4 +183,18 @@ datasets:
         - {label: "2025", url: "https://www.houstontx.gov/police/cs/xls/NIBRSPublicView2025.csv", manual_path: data/manual/houston/NIBRSPublicView2025.csv}
         - {label: "2026", url: "https://www.houstontx.gov/police/cs/xls/NIBRSPublicView2026.csv", manual_path: data/manual/houston/NIBRSPublicView2026.csv}
     portal_url: https://www.houstontx.gov/police/cs/Monthly_Crime_Data_by_Street_and_Police_Beat.htm
-    pii_columns: []
+    pii_columns:
+      # both header eras (2019–2024 | 2025+)
+      - StreetNo
+      - Street Number
+      - StreetName
+      - Street Name
+      - StreetType
+      - Street Type
+      - Suffix
+      - Street Suffix
+      - MapLongitude
+      - Map Longitude
+      - MapLatitude
+      - Map Latitude
+      - Beat  # finer than ZIP / council district
