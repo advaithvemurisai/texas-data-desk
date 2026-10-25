@@ -10,7 +10,7 @@ These are non-negotiable. If a task seems to require breaking one, stop and ask.
 
 ### 1. Free model tiers only
 - No Claude API, no OpenAI paid API, no paid model of any kind, including as a fallback or "just for testing".
-- Workers and orchestrator: Gemini Flash (free tier). Verifier: gpt-oss-120b on Groq (free tier). Overflow: Gemini Flash-Lite, gpt-oss-20b on Groq, Cerebras free tier, OpenRouter `:free` models.
+- Workers and orchestrator: Gemini Flash-Lite (`gemini-3.5-flash-lite`, free tier). Verifier: `qwen/qwen3.8-27b` on Groq (free tier); fallback `openai/gpt-oss-120b` on Groq or Cerebras. Overflow: gpt-oss-20b on Groq, Cerebras free tier, OpenRouter `:free` models. Why: DECISIONS 2026-10-25.
 - When every free quota is used up, the app serves cached and featured answers only and says when quotas reset. It never switches to a paid model.
 - All providers go through one OpenAI-compatible adapter; switching models is a config change.
 - No local models (dev machine is an M1 with 8 GB).
@@ -69,6 +69,9 @@ Update this section as each tool lands. Run everything from the repo root.
   - `data/snapshots.yaml` pins one raw snapshot per dataset per environment; `dbt-vars` checks each exists. The run stops if `--vars` and `--target` name different environments.
   - Warehouses: `data/warehouse_eval.duckdb` (frozen; gold SQL only) and `data/warehouse_live.duckdb` (serving). Staging tables are `stg_<dataset_id>`, except Dallas police, which is `stg_dallas_police_offenses` (one row per offense).
   - `frozen_snapshot_counts` runs on eval only and checks that staging reproduces the counts in the quirks notes.
+
+- API (`apps/api`, package `tdd_api`): model adapter `tdd_api.llm` (models named `<provider>:<model id>`; keys `GEMINI_API_KEY`, `GROQ_API_KEY` in `.env`), read-only warehouse tool `tdd_api.warehouse` (external file access locked, so SQL can't reach raw Parquet or the eval warehouse).
+- Week-1 model test: `uv run tdd-model-check run [<provider>:<model>…] [--only q01 …]` (live warehouse; one results JSON per model in `docs/model_check/`), `uv run tdd-model-check summary <files…>`. Its 10 questions are throwaway and must not be reused in the eval set.
 
 Planned, not set up yet:
 

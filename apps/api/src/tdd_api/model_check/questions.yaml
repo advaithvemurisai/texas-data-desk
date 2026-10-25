@@ -1,0 +1,74 @@
+# Week-1 model test (docs/PLAN.md): picks the free models, nothing else. Throwaway questions,
+# one per known trap; NOT part of the 60-question eval set. Do not copy them, their wording or
+# their answers into the eval set, and do not tune agent prompts on them.
+# Expected values were computed by hand on the live warehouse built from the 2026-10-17
+# snapshots (SA 311: 2026-10-18), following data/definitions.md.
+#
+# status: answered | declined. Values are matched exactly per key.
+# notes_must_mention: a caveat the answer has to state (case-insensitive substring, any of).
+
+questions:
+  - id: q01
+    trap: Dallas has several rows per offense; count distinct (incidentnum, nibrs_code)
+    question: How many motor vehicle thefts did Dallas police record in 2024?
+    keys: the year
+    expected: {status: answered, values: {"2024": 14122}}
+
+  - id: q02
+    trap: Houston rows carry Offense Count; sum it, never count rows
+    question: How many aggravated assault offenses occurred in Houston in 2025?
+    keys: the year
+    expected: {status: answered, values: {"2025": 15431}}
+
+  - id: q03
+    trap: Austin renamed its pothole request type twice; all names count
+    question: How many pothole repair requests did Austin 311 receive each year from 2021 to 2025?
+    keys: each year
+    expected:
+      status: answered
+      values: {"2021": 4172, "2022": 3083, "2023": 3988, "2024": 3210, "2025": 3026}
+
+  - id: q04
+    trap: four tables, four counting rules; San Antonio is dated by report date
+    question: Compare burglary offenses in 2024 across Dallas, Austin, San Antonio and Houston.
+    keys: city (dallas, austin, san_antonio, houston)
+    expected:
+      status: answered
+      values: {dallas: 5727, austin: 4165, san_antonio: 7175, houston: 13354}
+      notes_must_mention: [report]
+
+  - id: q05
+    trap: San Antonio 311 is a rolling 365-day window; trends must be declined
+    question: How have San Antonio 311 requests changed from 2021 to 2025?
+    keys: none
+    expected: {status: declined}
+
+  - id: q06
+    trap: Houston 311 is out of scope
+    question: How many 311 requests did Houston get in 2025?
+    keys: none
+    expected: {status: declined}
+
+  - id: q07
+    trap: shelter outcomes are dated by outcome_date; Dallas fiscal year starts in October
+    question: How many adoptions did Dallas Animal Services record in fiscal year 2025 (October 2024 through September 2025)?
+    keys: FY2025
+    expected: {status: answered, values: {FY2025: 11284}}
+
+  - id: q08
+    trap: Austin noise spans four request types; group by council district
+    question: Which 3 Austin council districts had the most noise complaints to 311 in 2024, and how many did each have?
+    keys: district number (e.g. "9")
+    expected: {status: answered, values: {"9": 6756, "3": 4517, "1": 4495}}
+
+  - id: q09
+    trap: San Antonio 311 uses TYPENAME, inside the file's window
+    question: How many illegal dumping requests did San Antonio 311 receive from January through June 2026?
+    keys: 2026-H1
+    expected: {status: answered, values: {2026-H1: 2784}}
+
+  - id: q10
+    trap: '"total crime" is NIBRS Group A only; Dallas also publishes Group B and C'
+    question: What was the total crime count in Dallas in 2025?
+    keys: the year
+    expected: {status: answered, values: {"2025": 66884}}

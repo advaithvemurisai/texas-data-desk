@@ -1,0 +1,324 @@
+{
+  "model": "groq:openai/gpt-oss-120b",
+  "correct": 5,
+  "asked": 9,
+  "usage": {
+    "requests": 53,
+    "prompt_tokens": 273881,
+    "completion_tokens": 9479,
+    "total_tokens": 283360,
+    "rate_limited": 64,
+    "seconds": 57.69397150900082
+  },
+  "questions": [
+    {
+      "id": "q01",
+      "score": {
+        "status": true,
+        "values": true,
+        "notes": true,
+        "correct": true
+      },
+      "answer": {
+        "notes": "Dallas motor vehicle thefts are counted as distinct (incidentnum, nibrs_code) offenses using the NIBRS code 240. The date used is the occurrence date (occurred_date). The count reflects 2024 offenses only.",
+        "sql": [
+          "SELECT COUNT(*) AS cnt FROM (SELECT DISTINCT incidentnum, nibrs_code FROM stg_dallas_police_offenses WHERE nibrs_code = '240' AND EXTRACT(year FROM occurred_date) = 2024) t;"
+        ],
+        "status": "answered",
+        "values": {
+          "2024": 14122
+        }
+      },
+      "steps": 4,
+      "sql_calls": 1,
+      "sql_errors": 0,
+      "tool_errors": 0,
+      "plain_text_turns": 1,
+      "seconds": 88.9,
+      "error": null,
+      "events": [
+        {
+          "tool": "read_notes",
+          "args": "{\"city\":\"dallas\"}"
+        },
+        {
+          "tool": "run_sql",
+          "args": "{\"sql\":\"SELECT COUNT(*) AS cnt FROM (SELECT DISTINCT incidentnum, nibrs_code FROM stg_dallas_police_offenses WHERE nibrs_code = '240' AND EXTRACT(year FROM occurred_date) = 2024) t;\"}"
+        },
+        {
+          "tool": "final_answer",
+          "args": "{\"notes\":\"Dallas motor vehicle thefts are counted as distinct (incidentnum, nibrs_code) offenses using the NIBRS code 240. The date used is the occurrence date (occurred_date). The count reflects 2024 offenses only.\",\"sql\":[\"SELECT COUNT(*) AS cnt FROM (SELECT DISTINCT incidentnum, nibrs_code FROM stg_dallas_police_offenses WHERE nibrs_code = '240' AND EXTRACT(year FROM occurred_date) = 2024) t;\"],\"status\":\"answered\",\"values\":{\"2024\":14122}}"
+        }
+      ]
+    },
+    {
+      "id": "q02",
+      "score": {
+        "status": true,
+        "values": true,
+        "notes": true,
+        "correct": true
+      },
+      "answer": {
+        "notes": "Aggregated by summing Offense Count for NIBRS class '13A' (aggravated assault) where occurrence year = 2025, per Houston crime definition (sum Offense Count, not row count).",
+        "sql": [
+          "SELECT SUM(COALESCE(offense_count,0)) AS total FROM stg_houston_nibrs WHERE nibrs_class = '13A' AND EXTRACT(year FROM occurred_date) = 2025"
+        ],
+        "status": "answered",
+        "values": {
+          "2025": 15431
+        }
+      },
+      "steps": 7,
+      "sql_calls": 2,
+      "sql_errors": 0,
+      "tool_errors": 0,
+      "plain_text_turns": 3,
+      "seconds": 217.5,
+      "error": null,
+      "events": [
+        {
+          "tool": "read_notes",
+          "args": "{\"city\":\"houston\"}"
+        },
+        {
+          "tool": "run_sql",
+          "args": "{\"sql\":\"SELECT SUM(COALESCE(offense_count,0)) AS total FROM stg_houston_nibrs WHERE nibrs_class = '13A' AND EXTRACT(year FROM occurred_date) = 2025\"}"
+        },
+        {
+          "tool": "run_sql",
+          "args": "{\"sql\":\"SELECT SUM(COALESCE(offense_count,0)) AS total FROM stg_houston_nibrs WHERE nibrs_class = '13A' AND EXTRACT(year FROM occurred_date) = 2025\"}"
+        },
+        {
+          "tool": "final_answer",
+          "args": "{\"notes\":\"Aggregated by summing Offense Count for NIBRS class '13A' (aggravated assault) where occurrence year = 2025, per Houston crime definition (sum Offense Count, not row count).\",\"sql\":[\"SELECT SUM(COALESCE(offense_count,0)) AS total FROM stg_houston_nibrs WHERE nibrs_class = '13A' AND EXTRACT(year FROM occurred_date) = 2025\"],\"status\":\"answered\",\"values\":{\"2025\":15431}}"
+        }
+      ]
+    },
+    {
+      "id": "q03",
+      "score": {
+        "status": false,
+        "values": false,
+        "notes": false,
+        "correct": false
+      },
+      "answer": null,
+      "steps": 10,
+      "sql_calls": 2,
+      "sql_errors": 0,
+      "tool_errors": 0,
+      "plain_text_turns": 7,
+      "seconds": 298.2,
+      "error": null,
+      "events": [
+        {
+          "tool": "read_notes",
+          "args": "{\"city\":\"austin\"}"
+        },
+        {
+          "tool": "run_sql",
+          "args": "{\"sql\":\"SELECT EXTRACT(YEAR FROM created_at) AS year, COUNT(*) AS cnt\\nFROM stg_austin_311\\nWHERE sr_type_desc IN ('Pothole Repair','SBO - Pothole Repair','TPW - Pothole Repair')\\n  AND EXTRACT(YEAR FROM created_at) BETWEEN 2021 AND 2025\\nGROUP BY year\\nORDER BY year;\"}"
+        },
+        {
+          "tool": "run_sql",
+          "args": "{\"sql\":\"SELECT EXTRACT(YEAR FROM created_at) AS year, COUNT(*) AS cnt\\nFROM stg_austin_311\\nWHERE sr_type_desc IN ('Pothole Repair','SBO - Pothole Repair','TPW - Pothole Repair')\\n  AND EXTRACT(YEAR FROM created_at) BETWEEN 2021 AND 2025\\nGROUP BY year\\nORDER BY year;\"}"
+        }
+      ]
+    },
+    {
+      "id": "q04",
+      "score": {
+        "status": false,
+        "values": false,
+        "notes": false,
+        "correct": false
+      },
+      "answer": null,
+      "steps": 5,
+      "sql_calls": 0,
+      "sql_errors": 0,
+      "tool_errors": 0,
+      "plain_text_turns": 0,
+      "seconds": 122.8,
+      "error": "HTTPStatusError: Client error '413 Payload Too Large' for url 'https://api.groq.com/openai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413",
+      "events": [
+        {
+          "tool": "read_notes",
+          "args": "{\"city\":\"dallas\"}"
+        },
+        {
+          "tool": "read_notes",
+          "args": "{\"city\":\"austin\"}"
+        },
+        {
+          "tool": "read_notes",
+          "args": "{\"city\":\"san_antonio\"}"
+        },
+        {
+          "tool": "read_notes",
+          "args": "{\"city\":\"houston\"}"
+        }
+      ]
+    },
+    {
+      "id": "q05",
+      "score": {
+        "status": true,
+        "values": true,
+        "notes": true,
+        "correct": true
+      },
+      "answer": {
+        "notes": "San Antonio 311 data only covers the most recent 12\u2011month reporting window, so trends across multiple years (e.g., 2021 vs 2025) cannot be derived.",
+        "status": "declined",
+        "values": {}
+      },
+      "steps": 1,
+      "sql_calls": 0,
+      "sql_errors": 0,
+      "tool_errors": 0,
+      "plain_text_turns": 0,
+      "seconds": 0.5,
+      "error": null,
+      "events": [
+        {
+          "tool": "final_answer",
+          "args": "{\"notes\":\"San Antonio 311 data only covers the most recent 12\u2011month reporting window, so trends across multiple years (e.g., 2021 vs 2025) cannot be derived.\",\"status\":\"declined\",\"values\":{}}"
+        }
+      ]
+    },
+    {
+      "id": "q06",
+      "score": {
+        "status": false,
+        "values": false,
+        "notes": false,
+        "correct": false
+      },
+      "answer": null,
+      "steps": 10,
+      "sql_calls": 0,
+      "sql_errors": 0,
+      "tool_errors": 0,
+      "plain_text_turns": 8,
+      "seconds": 174.9,
+      "error": null,
+      "events": [
+        {
+          "tool": "read_notes",
+          "args": "{\"city\":\"houston\"}"
+        },
+        {
+          "tool": "read_notes",
+          "args": "{\"city\":\"houston\"}"
+        }
+      ]
+    },
+    {
+      "id": "q07",
+      "score": {
+        "status": true,
+        "values": true,
+        "notes": true,
+        "correct": true
+      },
+      "answer": {
+        "notes": "Dallas animal shelter outcomes are counted by outcome_date. Fiscal year 2025 runs from 2024-10-01 through 2025-09-30. Rows with impossible future dates have been excluded per the Dallas shelter data quirks.",
+        "sql": [
+          "SELECT COUNT(*) AS adoption_count FROM stg_dallas_shelter WHERE outcome_type = 'ADOPTION' AND outcome_date >= DATE '2024-10-01' AND outcome_date <= DATE '2025-09-30';"
+        ],
+        "status": "answered",
+        "values": {
+          "FY2025": 11284
+        }
+      },
+      "steps": 9,
+      "sql_calls": 2,
+      "sql_errors": 0,
+      "tool_errors": 0,
+      "plain_text_turns": 5,
+      "seconds": 189.6,
+      "error": null,
+      "events": [
+        {
+          "tool": "read_notes",
+          "args": "{\"city\":\"dallas\"}"
+        },
+        {
+          "tool": "run_sql",
+          "args": "{\"sql\":\"SELECT COUNT(*) AS adoption_count FROM stg_dallas_shelter WHERE outcome_type = 'ADOPTION' AND outcome_date \\u003e= DATE '2024-10-01' AND outcome_date \\u003c= DATE '2025-09-30';\"}"
+        },
+        {
+          "tool": "run_sql",
+          "args": "{\"sql\":\"SELECT COUNT(*) AS adoption_count FROM stg_dallas_shelter WHERE outcome_type = 'ADOPTION' AND outcome_date \\u003e= DATE '2024-10-01' AND outcome_date \\u003c= DATE '2025-09-30';\"}"
+        },
+        {
+          "tool": "final_answer",
+          "args": "{\"notes\":\"Dallas animal shelter outcomes are counted by outcome_date. Fiscal year 2025 runs from 2024-10-01 through 2025-09-30. Rows with impossible future dates have been excluded per the Dallas shelter data quirks.\",\"sql\":[\"SELECT COUNT(*) AS adoption_count FROM stg_dallas_shelter WHERE outcome_type = 'ADOPTION' AND outcome_date \\u003e= DATE '2024-10-01' AND outcome_date \\u003c= DATE '2025-09-30';\"],\"status\":\"answered\",\"values\":{\"FY2025\":11284}}"
+        }
+      ]
+    },
+    {
+      "id": "q08",
+      "score": {
+        "status": true,
+        "values": true,
+        "notes": true,
+        "correct": true
+      },
+      "answer": {
+        "notes": "Austin noise request types include several categories; counts are for 2024 only. Noise reporting changed in 2022, but 2024 data is reliable.",
+        "sql": [
+          "SELECT council_district AS district, COUNT(*) AS complaints\nFROM stg_austin_311\nWHERE EXTRACT(YEAR FROM created_at) = 2024\n  AND sr_type_desc IN ('APD - Non Emergency Noise/Alarm', 'Loud Commercial Music', 'Zz_Loud Commercial Music', 'DSD - Outdoor Commercial Venue Music Complaint')\nGROUP BY council_district\nORDER BY complaints DESC\nLIMIT 3;"
+        ],
+        "status": "answered",
+        "values": {
+          "1": 4495,
+          "3": 4517,
+          "9": 6756
+        }
+      },
+      "steps": 8,
+      "sql_calls": 1,
+      "sql_errors": 0,
+      "tool_errors": 0,
+      "plain_text_turns": 5,
+      "seconds": 248.8,
+      "error": null,
+      "events": [
+        {
+          "tool": "read_notes",
+          "args": "{\"city\":\"austin\"}"
+        },
+        {
+          "tool": "run_sql",
+          "args": "{\"sql\":\"SELECT council_district AS district, COUNT(*) AS complaints\\nFROM stg_austin_311\\nWHERE EXTRACT(YEAR FROM created_at) = 2024\\n  AND sr_type_desc IN ('APD - Non Emergency Noise/Alarm',\\n                       'Loud Commercial Music',\\n                       'Zz_Loud Commercial Music',\\n                       'DSD - Outdoor Commercial Venue Music Complaint')\\nGROUP BY council_district\\nORDER BY complaints DESC\\nLIMIT 3;\"}"
+        },
+        {
+          "tool": "final_answer",
+          "args": "{\"notes\":\"Austin noise request types include several categories; counts are for 2024 only. Noise reporting changed in 2022, but 2024 data is reliable.\",\"sql\":[\"SELECT council_district AS district, COUNT(*) AS complaints\\nFROM stg_austin_311\\nWHERE EXTRACT(YEAR FROM created_at) = 2024\\n  AND sr_type_desc IN ('APD - Non Emergency Noise/Alarm', 'Loud Commercial Music', 'Zz_Loud Commercial Music', 'DSD - Outdoor Commercial Venue Music Complaint')\\nGROUP BY council_district\\nORDER BY complaints DESC\\nLIMIT 3;\"],\"status\":\"answered\",\"values\":{\"1\":4495,\"3\":4517,\"9\":6756}}"
+        }
+      ]
+    },
+    {
+      "id": "q09",
+      "score": {
+        "status": false,
+        "values": false,
+        "notes": false,
+        "correct": false
+      },
+      "answer": null,
+      "steps": 1,
+      "sql_calls": 0,
+      "sql_errors": 0,
+      "tool_errors": 0,
+      "plain_text_turns": 0,
+      "seconds": 0.1,
+      "error": "QuotaExhaustedError: groq:openai/gpt-oss-120b: daily quota used: {\"error\":{\"message\":\"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_<redacted>` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 197683, Requested 3641. Please try again in 9m31.968s. Need more tokens? Upgrade to Dev Tier today at https://",
+      "events": []
+    }
+  ],
+  "run_at": "2026-10-25T032246Z"
+}

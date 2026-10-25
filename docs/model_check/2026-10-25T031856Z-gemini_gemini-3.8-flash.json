@@ -1,0 +1,34 @@
+{
+  "model": "gemini:gemini-3.8-flash",
+  "correct": 0,
+  "asked": 1,
+  "usage": {
+    "requests": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "rate_limited": 1,
+    "seconds": 0.20539508300134912
+  },
+  "questions": [
+    {
+      "id": "q01",
+      "score": {
+        "status": false,
+        "values": false,
+        "notes": false,
+        "correct": false
+      },
+      "answer": null,
+      "steps": 1,
+      "sql_calls": 0,
+      "sql_errors": 0,
+      "tool_errors": 0,
+      "plain_text_turns": 0,
+      "seconds": 0.2,
+      "error": "QuotaExhaustedError: gemini:gemini-3.8-flash: daily quota used: [{\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota e",
+      "events": []
+    }
+  ],
+  "run_at": "2026-10-25T031856Z"
+}

@@ -107,7 +107,7 @@ An orchestrator defines the question precisely, one worker per city × dataset q
                                │
                                ▼
         ┌──────────────────────────────────────────────┐
-        │ Orchestrator · Gemini Flash                  │
+        │ Orchestrator · Gemini Flash-Lite             │
         │ Writes the metric contract: categories,      │
         │ dates, counting unit, normalization;         │
         │ picks the workers                            │
@@ -125,7 +125,7 @@ An orchestrator defines the question precisely, one worker per city × dataset q
                            │  value + SQL + caveats
                            ▼
         ┌──────────────────────────────────────────────┐
-        │ Verifier · gpt-oss-120b on Groq              │
+        │ Verifier · qwen3.8-27b on Groq               │
         │ 1. Reviews the contract against the question │
         │ 2. Code checks: coverage, duplicates,        │
         │    outliers                                  │
@@ -143,7 +143,7 @@ Workers each see only their own city's schema and quirks notes, which keeps cont
 - **Worker split rule:** one worker per (city, dataset). A Dallas-only question about two datasets gets two workers.
 - **Why multi-agent:** separate contexts per city, parallel queries, and independent checking by a different model family.
 
-**Call budget: about 8–10 model calls per question.** On free tiers (Gemini Flash reportedly ~10–15 requests per minute), calls per question are the bottleneck, not cost.
+**Call budget: about 8–10 model calls per question.** On free tiers, calls and tokens per question are the bottleneck, not cost (measured limits: `docs/model_check/README.md`).
 
 | Step | Calls |
 | --- | --- |
@@ -160,13 +160,14 @@ Workers each see only their own city's schema and quirks notes, which keeps cont
 
 ## Models and providers
 
-The project uses free model tiers only: no Claude API and no paid models, including as backups. Workers run on Gemini Flash's free tier, and the verifier runs on a different company's model, gpt-oss-120b on Groq's free tier. That makes the check more independent than a model reviewing its own work.
+The project uses free model tiers only: no Claude API and no paid models, including as backups. The orchestrator and workers run on Gemini Flash-Lite's free tier, and the verifier runs on a different company's model, Qwen on Groq's free tier (DECISIONS 2026-10-25). That makes the check more independent than a model reviewing its own work.
 
 | Role | Model (all free tiers) | Why |
 | --- | --- | --- |
-| Orchestrator + workers | Gemini Flash | Most generous free tier; supports tool calling and JSON output |
-| Verifier | gpt-oss-120b on Groq | Different model family from the workers; very fast |
-| Overflow when a quota runs out | Gemini Flash-Lite, gpt-oss-20b on Groq, Cerebras free tier, OpenRouter `:free` models (50 requests/day) | Spreads load across providers; never a paid fallback |
+| Orchestrator + workers | Gemini Flash-Lite (`gemini-3.5-flash-lite`) | 10/10 on the week-1 model test; the only Gemini model whose free tier fits the workload (Flash: 20 requests/day) |
+| Verifier | qwen3.8-27b on Groq | Different model family from the workers; 9/10 on the model test with no tool-calling slips |
+| Verifier fallback | gpt-oss-120b on Groq, plus Cerebras (same model) for headroom | Groq caps it at 200k tokens/day |
+| Overflow when a quota runs out | gpt-oss-20b on Groq, Cerebras free tier, OpenRouter `:free` models (50 requests/day) | Spreads load across providers; never a paid fallback |
 
 - **Provider-neutral layer:** these providers expose OpenAI-compatible APIs. One small adapter (or LiteLLM) covers them, so switching models is a config change.
 - **Week-1 model test:** run 10 questions on the free candidates and check tool calling, JSON output and SQL quality before committing.
@@ -299,7 +300,7 @@ Evaluation is the headline of the project. Every result runs on the frozen eval 
 2. Orchestrator + workers, no verifier.
 3. The full system.
 4. Verifier on the same model as the workers vs. a different model family.
-5. Worker model comparison across free models: Gemini Flash vs. Gemini Flash-Lite vs. gpt-oss-120b.
+5. Worker model comparison across free models: Gemini Flash-Lite vs. qwen3.8-27b vs. gpt-oss-120b (Gemini Flash only if its 20 requests/day allow).
 
 General assistants (Gemini, ChatGPT) are scored on the test set only, for the "why can't Google do this?" comparison. Results are reported by question tier, since the multi-agent edge should show mainly on cross-city questions.
 
@@ -318,6 +319,7 @@ Models cost $0: every model runs on a free tier, with no paid fallback. The only
 **Keeping it within free limits**
 
 - At 8–10 calls per question, the full eval (60 questions × 3 runs × 5 setups) is roughly 9,000 calls, more than a day's free quota. Spread runs across days and run setups in sequence.
+- Measured 2026-10-25: Flash-Lite allows 500 requests/day, so 9,000 calls is 2–3 weeks of quota. Budget it: 1 run per question on dev, 3 runs only on the final test-split results, and drop setups that don't answer a question the write-up needs.
 - Use 1 run per question during development; 3 runs only for final results.
 - The full eval runs once per milestone, not weekly; CI runs the 10-question smoke test only.
 - Demo protection: featured findings and cached answers make no model calls, per-IP limits apply, and the quota screen appears when free limits run out.
@@ -368,9 +370,9 @@ The two risks that matter most are wrong definitions and an untrustworthy eval. 
 - [x] List the personal-data columns to drop in each dataset
 - [x] Check whether Austin publishes usable animal shelter data
 - [x] Recheck Houston 311 services
-- [ ] Confirm free-tier limits in AI Studio, the Groq console and Cerebras
+- [ ] Confirm free-tier limits in AI Studio, the Groq console and Cerebras (Gemini and Groq measured 2026-10-25: Flash-Lite 500 requests/day; Cerebras still open)
 - [ ] Check App Runner background-CPU behavior and that AWS credits cover hosting
-- [ ] Run the 10-question test on the free candidate models
+- [x] Run the 10-question test on the free candidate models (`docs/model_check/README.md`)
 
 ## Sources
 

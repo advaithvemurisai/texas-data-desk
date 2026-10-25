@@ -3,7 +3,7 @@ name = "texas-data-desk"
 version = "0.1.0"
 description = "Multi-agent Q&A over Texas city open data"
 requires-python = ">=3.12,<3.13"
-dependencies = ["tdd-ingest"]
+dependencies = ["tdd-api", "tdd-ingest"]
 
 [dependency-groups]
 dev = [
@@ -18,9 +18,10 @@ dev = [
 package = false
 
 [tool.uv.workspace]
-members = ["data/ingest"]
+members = ["apps/api", "data/ingest"]
 
 [tool.uv.sources]
+tdd-api = { workspace = true }
 tdd-ingest = { workspace = true }
 
 [tool.ruff]
@@ -32,7 +33,7 @@ extend-exclude = ["data/dbt/target", "data/raw"]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
 
 [tool.pyright]
-include = ["data/ingest/src", "data/ingest/tests", "tests"]
+include = ["apps/api/src", "apps/api/tests", "data/ingest/src", "data/ingest/tests", "tests"]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 venvPath = "."
@@ -40,7 +41,7 @@ venv = ".venv"
 extraPaths = ["data/ingest/tests"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "data/ingest/tests"]
+testpaths = ["tests", "apps/api/tests", "data/ingest/tests"]
 pythonpath = ["data/ingest/tests"]
 addopts = "-m 'not live' --import-mode=importlib"
 markers = ["live: hits real city portals (excluded by default and in CI)"]
