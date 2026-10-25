@@ -36,3 +36,13 @@ Why key choices were made. Don't reverse any of these without a new entry explai
 **Decision:** v1 does not use Austin Animal Center data.
 **Why:** it is split at a system change on 2025-05-05 (ShelterBuddy). The legacy and new datasets use different intake categories, and the new one adds ~4.3k "Community Animal - Program" intakes, so there is no consistent series across that date. Only ~17 months exist after the switch.
 **Revisit if:** v2 adds shelter questions limited to post-May-2025 data (the new datasets refresh hourly), or the city publishes a crosswalk between the two systems.
+
+## 2026-10-24 · Eval snapshot frozen
+**Decision:** the eval environment in `data/snapshots.yaml` is pinned to the 2026-10-17 snapshots, except San Antonio 311, which uses 2026-10-18. Gold SQL runs only on `data/warehouse_eval.duckdb`, built from these.
+**Why:** these are the snapshots `definitions.md` and the quirks notes were written from. The 2026-10-18 San Antonio 311 pull is the one that was explored, and its window (2025-10-17 … 2026-10-16) lines up with the other cities' snapshot dates. A dbt test (`frozen_snapshot_counts`) checks that staging on this snapshot reproduces the quirks counts.
+**Consequences:** the eval data ends at different dates per city: Austin and San Antonio crime 2026-09-30, Houston 2026-06-30, Dallas and the 311 data mid-October 2026. Changing any eval date needs a new entry here, and every gold answer must be recomputed.
+
+## 2026-10-24 · Dallas police staged at offense grain only
+**Decision:** dbt exposes Dallas police only as `stg_dallas_police_offenses`, one row per distinct `(incidentnum, nibrs_code)`. The person-level raw rows are not staged.
+**Why:** agents would otherwise count raw rows (~1.26 per incident), which breaks CLAUDE.md rule 4. Offenses with a blank `nibrs_code` stay one offense per incident, which matches the quirks counts.
+**Consequences:** person-level fields (victim type, involvement) are not available to agents. Labels that differ between rows of the same offense (`nibrs_crime_category` on catch-all codes 999/90Z, `premise`) take a fixed pick (`min`). `nibrs_type` is not staged because it disagrees between rows of the same offense.

@@ -1,16 +1,31 @@
 version: 2
 
 # Raw snapshots written by tdd-ingest. Every column is text; staging models type and clean them.
+# Each table reads the snapshot date pinned for it in data/snapshots.yaml (passed as vars).
 sources:
   - name: raw
-    meta:
-      external_location: "read_parquet('data/raw/{name}/{{ var('snapshot') }}/*.parquet', union_by_name = true)"
     tables:
       - name: dallas_311
+        meta:
+          external_location: "read_parquet('data/raw/dallas_311/{{ var('snapshots').get('dallas_311', 'unset') }}/*.parquet', union_by_name = true)"
       - name: dallas_police
+        meta:
+          external_location: "read_parquet('data/raw/dallas_police/{{ var('snapshots').get('dallas_police', 'unset') }}/*.parquet', union_by_name = true)"
       - name: dallas_shelter
+        meta:
+          external_location: "read_parquet('data/raw/dallas_shelter/{{ var('snapshots').get('dallas_shelter', 'unset') }}/*.parquet', union_by_name = true)"
       - name: austin_311
+        meta:
+          external_location: "read_parquet('data/raw/austin_311/{{ var('snapshots').get('austin_311', 'unset') }}/*.parquet', union_by_name = true)"
       - name: austin_nibrs
+        meta:
+          external_location: "read_parquet('data/raw/austin_nibrs/{{ var('snapshots').get('austin_nibrs', 'unset') }}/*.parquet', union_by_name = true)"
       - name: sa_311
+        meta:
+          external_location: "read_parquet('data/raw/sa_311/{{ var('snapshots').get('sa_311', 'unset') }}/*.parquet', union_by_name = true)"
       - name: sa_offenses
+        meta:
+          external_location: "read_parquet('data/raw/sa_offenses/{{ var('snapshots').get('sa_offenses', 'unset') }}/*.parquet', union_by_name = true)"
       - name: houston_nibrs
+        meta:
+          external_location: "read_parquet('data/raw/houston_nibrs/{{ var('snapshots').get('houston_nibrs', 'unset') }}/*.parquet', union_by_name = true)"

@@ -9,11 +9,17 @@ macro-paths: ["macros"]
 target-path: target
 clean-targets: [target]
 
-# Raw snapshot date to read (data/raw/<dataset_id>/<snapshot>/). Pass with
-# --vars '{snapshot: 2026-10-17}'; per-dataset dates from data/snapshots.yaml come later.
+# Pass with --vars "$(uv run tdd-ingest dbt-vars <env>)": the environment name and one raw
+# snapshot date per dataset (data/raw/<dataset_id>/<date>/), from data/snapshots.yaml.
 vars:
-  snapshot: "unset"
+  snapshot_env: "unset"
+  snapshots: {}
+
+on-run-start:
+  - "{{ check_snapshot_env() }}"
 
 models:
   texas_data_desk:
-    +materialized: view
+    staging:
+      # Tables, not views: agents query these often and the raw Parquet is all text.
+      +materialized: table

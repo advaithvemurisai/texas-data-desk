@@ -54,7 +54,8 @@ Only these may be compared across cities. Each is a single NIBRS code.
 NIBRS Group A only. Austin and San Antonio publish Group A only, so Group B rows are dropped
 elsewhere:
 
-- Dallas: `nibrs_group = 'A'` (2024: 91.0k Group A, 11.0k Group B, 1.0k blank).
+- Dallas: `nibrs_group = 'A'` (2024 offenses: 71.9k Group A, 10.3k Group B, 30.4k Group C
+  = code `999`, non-NIBRS, 1.0k blank).
 - Houston: exclude classes starting `90` (Group B: DUI, trespass, disorderly conduct, …;
   ~35k offenses in 2024).
 - Dallas rows dated before 2017 have no NIBRS fields; there is no Dallas NIBRS total before 2017.

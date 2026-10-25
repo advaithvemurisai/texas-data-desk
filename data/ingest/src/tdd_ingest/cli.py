@@ -1,5 +1,6 @@
 """tdd-ingest: pull raw snapshots, inspect them, and manage the San Antonio 311 archive."""
 
+import json
 import logging
 import re
 import shutil
@@ -13,6 +14,13 @@ from typing import Annotated
 import typer
 
 from tdd_ingest import paths
+from tdd_ingest.environments import (
+    Environment,
+    check_environment,
+    load_snapshots,
+    snapshots_path,
+)
+from tdd_ingest.environments import dbt_vars as environment_vars
 from tdd_ingest.http import Http
 from tdd_ingest.ingest import ingest
 from tdd_ingest.profile import profile as profile_snapshot
@@ -119,6 +127,21 @@ def compare_manifests(
     if -change > max_drop:
         typer.secho(f"row count dropped more than {max_drop:.0%}", fg="red", err=True)
         raise typer.Exit(1)
+
+
+@app.command("dbt-vars")
+def dbt_vars(
+    env: Annotated[Environment, typer.Argument(help="Environment in data/snapshots.yaml")],
+) -> None:
+    """Print dbt --vars JSON pinning each dataset to the environment's snapshot."""
+    root, registry = _context()
+    snapshots = load_snapshots(snapshots_path(root))
+    problems = check_environment(snapshots, env, registry, paths.raw_root(root))
+    if problems:
+        for p in problems:
+            typer.secho(p, fg="red", err=True)
+        raise typer.Exit(1)
+    typer.echo(json.dumps(environment_vars(snapshots, env)))
 
 
 ARCHIVE_ASSET = re.compile(r"^(?P<id>[a-z0-9_]+)-(?P<date>\d{4}-\d{2}-\d{2})\.tar$")

@@ -1,8 +1,13 @@
-# Run dbt from the repo root: uv run dbt <cmd> --project-dir data/dbt --profiles-dir data/dbt
+# Run dbt from the repo root (commands in CLAUDE.md). One warehouse per environment in
+# data/snapshots.yaml; --vars from `tdd-ingest dbt-vars <env>` must match --target.
 texas_data_desk:
-  target: dev
+  target: live
   outputs:
-    dev:
+    eval:
       type: duckdb
-      path: data/warehouse.duckdb
+      path: data/warehouse_eval.duckdb
+      threads: 4
+    live:
+      type: duckdb
+      path: data/warehouse_live.duckdb
       threads: 4

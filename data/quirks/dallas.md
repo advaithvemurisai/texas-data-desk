@@ -16,9 +16,10 @@ From exploration of the 2026-10-17 snapshots. Written before any eval question (
 - That dedupe collapses multiple victims of the same offense into one. NIBRS counts person
   offenses per victim, so Dallas aggravated assault is likely low compared with Houston
   (`definitions.md`).
-- **Includes Group B and non-NIBRS rows.** 2024: 91.0k Group A, 11.0k Group B, 1.0k blank
-  `nibrs_group`. The largest `nibrs_crime_category` is `MISCELLANEOUS`, and traffic violations are
-  in the data too. "Total crime" uses `nibrs_group = 'A'` only.
+- **Includes Group B and non-NIBRS rows.** 2024 offenses (rows in brackets): 71.9k Group A
+  (91.0k rows), 10.3k Group B (11.0k), 30.4k Group C, which is code `999`, non-NIBRS (31.6k),
+  and 1.0k blank `nibrs_group`. The largest `nibrs_crime_category` is `MISCELLANEOUS`, and
+  traffic violations are in the data too. "Total crime" uses `nibrs_group = 'A'` only.
 - NIBRS fields are filled from 2017 on; 2014–2016 rows have them blank.
 - `date1` is the occurrence start (`date1 <= reporteddate` in 99.995% of rows). Volume starts
   June 2014; the 690 rows dated 1967–2013 are back-dated occurrences and are dropped.
@@ -48,6 +49,8 @@ From exploration of the 2026-10-17 snapshots. Written before any eval question (
 - `Sanitation Same Day Missed Collection - SAN` exists only in 2021, and `Animal Loose Cat - DAS`
   only in 2021 (folded into `Animal Loose - DAS`).
 - `service_request_number` and `unique_key` are unique.
+- 3 requests have no `service_request_type` (2024–2026). They are kept and count only toward
+  totals.
 
 ## Animal shelter (`dallas_shelter`)
 
@@ -56,7 +59,11 @@ From exploration of the 2026-10-17 snapshots. Written before any eval question (
 - An animal can enter many times: 2025 has 41.0k intakes for 32.4k animals. `FOSTER` (7.2k in
   2025) and `TREATMENT` (1.3k) intakes are mostly animals returning to the system.
 - Fiscal-year file: starts 2023-10-01 (2023 = Oct–Dec only, 8.8k).
-- Impossible future dates: one row each in 2027, 2029, 2030 and 2920; drop them.
+- Impossible future dates: one row each in 2027, 2029, 2030 and 2920; drop them. Staging also
+  drops rows with an `outcome_date` after the snapshot (8 rows dropped in all).
+- 8 rows have an `outcome_date` before their `intake_date`, 3 of them before the file starts
+  (2022-12-27, 2023-02-04, 1969-10-19). They are kept; they fall outside any 2023-10+ outcome
+  window.
 - Animal types: DOG 76k, CAT 39k, BIRD 7k, WILDLIFE 2.8k, LIVESTOCK 107.
 - `source_id` (owner/finder person id), `staff_id`, `receipt_number`, `additional_information`
   and `census_tract` are dropped in staging.

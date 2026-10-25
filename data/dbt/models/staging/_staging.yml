@@ -1,0 +1,156 @@
+version: 2
+
+# Staging: typed, personal columns dropped (CLAUDE.md rule 2), impossible dates dropped, each
+# city's own category names kept. Counting rules: data/definitions.md. Traps: data/quirks/.
+# Monthly floors are about half the lowest real month in the 2026-10-17 snapshots, so they
+# catch gaps and truncated pulls, not ordinary swings.
+
+models:
+  - name: stg_dallas_311
+    description: Dallas 311 service requests, one row per request. Date by created_at.
+    columns:
+      - name: service_request_number
+        data_tests: [unique, not_null]
+      - name: service_request_type
+        description: Exact type name incl. department suffix (PBW/TRN became TPW in 2024).
+        data_tests:
+          - not_null:
+              config: {error_if: ">20"}  # 3 blank-type requests in the 2026-10-17 snapshot
+      - name: council_district
+        description: Single district 1-14; null when blank or a multi-district list.
+      - name: created_at
+        data_tests:
+          - not_null
+          - date_between:
+              arguments: {dataset_id: dallas_311, min_date: 2020-09-30}
+          - monthly_rows_at_least:
+              arguments: {start: 2020-10-01, end: 2026-09-01, min_rows: 12000}
+
+  - name: stg_dallas_police_offenses
+    description: >-
+      Dallas NIBRS offenses, one row per distinct (incidentnum, nibrs_code). Count rows to
+      count offenses. "Total crime" is nibrs_group = 'A'; NIBRS fields are blank before 2017.
+    columns:
+      - name: offense_key
+        data_tests: [unique, not_null]
+      - name: incidentnum
+        data_tests: [not_null]
+      - name: nibrs_group
+        description: A, B, C (code 999, non-NIBRS) or null.
+        data_tests:
+          - accepted_values: {arguments: {values: [A, B, C]}}
+      - name: occurred_date
+        description: Occurrence start date (date1).
+        data_tests:
+          - not_null
+          - date_between:
+              arguments: {dataset_id: dallas_police, min_date: 2014-06-01}
+          - monthly_rows_at_least:
+              arguments: {start: 2014-06-01, end: 2026-09-01, min_rows: 2500}
+      - name: council_district
+        description: Single district 1-14 (raw D7 -> 7); null otherwise.
+      - name: source_rows
+        description: Raw rows (persons x offense lines) collapsed into this offense.
+
+  - name: stg_dallas_shelter
+    description: Dallas Animal Services intakes, one row per impound. Fiscal years 2023-2026.
+    columns:
+      - name: impound_number
+        data_tests: [unique, not_null]
+      - name: intake_date
+        data_tests:
+          - not_null
+          - date_between:
+              arguments: {dataset_id: dallas_shelter, min_date: 2023-10-01}
+          - monthly_rows_at_least:
+              arguments: {start: 2023-10-01, end: 2026-09-01, min_rows: 1200}
+      - name: outcome_date
+        data_tests:
+          - date_between:
+              arguments: {dataset_id: dallas_shelter, min_date: 2023-10-01}
+              config: {error_if: ">20"}  # 3 outcomes dated before 2023-10-01 (one in 1969)
+
+  - name: stg_austin_311
+    description: Austin 311 service requests, one row per request. Date by created_at.
+    columns:
+      - name: sr_number
+        data_tests: [unique, not_null]
+      - name: sr_type_desc
+        description: Exact type name; renamed over time (all names in definitions.md).
+        data_tests: [not_null]
+      - name: location_city
+        description: Upper-cased; not a filter for "in Austin".
+      - name: created_at
+        data_tests:
+          - not_null
+          - date_between:
+              arguments: {dataset_id: austin_311, min_date: 2014-01-01}
+          - monthly_rows_at_least:
+              arguments: {start: 2014-01-01, end: 2026-09-01, min_rows: 4000}
+
+  - name: stg_austin_nibrs
+    description: Austin NIBRS Group A offenses, one row per offense. Date by occurred_date.
+    columns:
+      - name: offense_id
+        data_tests: [unique, not_null]
+      - name: nibrs_code
+        description: First 3 characters of nibrs_desc (e.g. 240).
+        data_tests: [not_null]
+      - name: occurred_date
+        data_tests:
+          - not_null
+          - date_between:
+              arguments: {dataset_id: austin_nibrs, min_date: 2019-01-01}
+          - monthly_rows_at_least:
+              arguments: {start: 2019-01-01, end: 2026-09-01, min_rows: 2500}
+
+  - name: stg_sa_311
+    description: >-
+      San Antonio 311 cases opened inside the file's rolling 365-day window. Last-12-months
+      questions only; no trends.
+    columns:
+      - name: case_id
+        data_tests: [unique, not_null]
+      - name: opened_at
+        data_tests:
+          - not_null
+          - date_between:
+              arguments: {dataset_id: sa_311, min_date: 2025-10-01}
+      - name: report_start_date
+        data_tests: [not_null]
+
+  - name: stg_sa_offenses
+    description: >-
+      SAPD NIBRS Group A offenses, one row per offense. Dated by REPORT date (the only date
+      published); answers using it say so.
+    columns:
+      - name: report_id
+        data_tests: [not_null]
+      - name: nibrs_code_name
+        data_tests: [not_null]
+      - name: reported_date
+        data_tests:
+          - not_null
+          - date_between:
+              arguments: {dataset_id: sa_offenses, min_date: 2023-01-01}
+          - monthly_rows_at_least:
+              arguments: {start: 2023-01-01, end: 2026-09-01, min_rows: 5000}
+
+  - name: stg_houston_nibrs
+    description: >-
+      HPD NIBRS offense lines. Count offenses with sum(offense_count), never count(*).
+      Includes Group B (classes 90A-90Z); ends 2026-06-30.
+    columns:
+      - name: incident
+        data_tests: [not_null]
+      - name: nibrs_class
+        data_tests: [not_null]
+      - name: offense_count
+        data_tests: [not_null]
+      - name: occurred_date
+        data_tests:
+          - not_null
+          - date_between:
+              arguments: {dataset_id: houston_nibrs, min_date: 2019-01-01, max_date: 2026-06-30}
+          - monthly_rows_at_least:
+              arguments: {start: 2019-01-01, end: 2026-06-01, min_rows: 7000}

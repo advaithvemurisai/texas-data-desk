@@ -1,9 +1,29 @@
 # Which raw snapshot (data/raw/<dataset_id>/<date>/) each environment reads.
-# Edited by hand; ingest never touches this file.
+# Edited by hand; ingest never touches this file. dbt gets these dates through
+# `uv run tdd-ingest dbt-vars <env>` (commands in CLAUDE.md).
 #
 # eval: frozen once the week-1 checks pass. Gold SQL runs only on it and it never changes
 #       (CLAUDE.md rule 3). Changing an eval date needs a DECISIONS.md entry.
 # live: the serving snapshot, moved forward after each weekly refresh.
 
-eval: {}
-live: {}
+# Frozen 2026-10-24. These are the snapshots definitions.md and the quirks notes were
+# written from (San Antonio 311 uses its 2026-10-18 pull; see DECISIONS.md).
+eval:
+  dallas_311: 2026-10-17
+  dallas_police: 2026-10-17
+  dallas_shelter: 2026-10-17
+  austin_311: 2026-10-17
+  austin_nibrs: 2026-10-17
+  sa_311: 2026-10-18
+  sa_offenses: 2026-10-17
+  houston_nibrs: 2026-10-17
+
+live:
+  dallas_311: 2026-10-17
+  dallas_police: 2026-10-17
+  dallas_shelter: 2026-10-17
+  austin_311: 2026-10-17
+  austin_nibrs: 2026-10-17
+  sa_311: 2026-10-18
+  sa_offenses: 2026-10-17
+  houston_nibrs: 2026-10-17
