@@ -5,7 +5,7 @@ import httpx
 import pytest
 from tdd_api.llm import ChatClient, ModelRef, QuotaExhaustedError
 from tdd_api.model_check.cli import load_questions, score
-from tdd_api.warehouse import Warehouse
+from tdd_api.warehouse import QueryRejectedError, Warehouse
 
 ANSWERED = {"status": "answered", "values": {"2024": 14122}}
 
@@ -112,6 +112,41 @@ def test_warehouse_blocks_raw_files_and_attach(tmp_path: Path):
         f"attach '{tmp_path / 'other.duckdb'}' as o",
         "set enable_external_access = true",
     ):
-        with pytest.raises(duckdb.Error):
+        with pytest.raises((duckdb.Error, QueryRejectedError)):
             wh.query(sql)
+    wh.close()
+
+
+def test_query_accepts_one_select_only(tmp_path: Path):
+    db = tmp_path / "w.duckdb"
+    with duckdb.connect(str(db)) as con:
+        con.sql("create table stg_x as select 1 as a")
+    wh = Warehouse(db)
+    for ok in ("select a from stg_x", "with t as (select 1) select * from t", "from stg_x"):
+        wh.query(ok)
+    for bad in (
+        f"copy (select 1) to '{tmp_path / 'out.csv'}'",
+        f"attach '{tmp_path / 'o.duckdb'}' as o",
+        "set threads = 1",
+        "create table y as select 1",
+        "select 1; drop table stg_x",
+        "explain select 1",
+    ):
+        with pytest.raises(QueryRejectedError):
+            wh.query(bad)
+    assert not (tmp_path / "out.csv").exists()
+    wh.close()
+
+
+def test_parquet_bundle_reads_only_its_folder(tmp_path: Path):
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    with duckdb.connect() as con:
+        con.sql(f"copy (select range as a from range(4)) to '{bundle / 'stg_x.parquet'}'")
+        con.sql(f"copy (select 'secret' as name) to '{tmp_path / 'raw.parquet'}'")
+    wh = Warehouse(bundle)
+    assert wh.row_counts() == {"stg_x": 4}
+    assert wh.query("select sum(a) from stg_x").rows == [(6,)]
+    with pytest.raises(duckdb.Error):
+        wh.query(f"select * from read_parquet('{tmp_path / 'raw.parquet'}')")
     wh.close()

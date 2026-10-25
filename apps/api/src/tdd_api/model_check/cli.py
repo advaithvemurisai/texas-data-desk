@@ -9,8 +9,8 @@ from typing import Annotated, Any
 
 import typer
 import yaml
-from tdd_ingest import paths
 
+from tdd_api import config
 from tdd_api.llm import ChatClient, ModelRef, QuotaExhaustedError
 from tdd_api.model_check.agent import Agent, Trace
 from tdd_api.warehouse import Warehouse
@@ -142,14 +142,16 @@ def run(
         level=logging.INFO if verbose else logging.WARNING,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    root = paths.repo_root()
-    paths.load_dotenv(root)
+    root = config.repo_root()
+    if root is None:
+        raise typer.BadParameter("run from a checkout of the repo")
+    config.load_dotenv()
     refs = [ModelRef.parse(m) for m in models or DEFAULT_MODELS]
     questions = [q for q in load_questions() if not only or q["id"] in only]
     out_dir = out_dir or root / "docs" / "model_check"
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(UTC).strftime("%Y-%m-%dT%H%M%SZ")
-    warehouse = Warehouse(root / "data" / "warehouse_live.duckdb")
+    warehouse = Warehouse(root / "data" / "warehouse_live.duckdb")  # never the eval one
     for ref in refs:
         result = run_model(ref, questions, root, warehouse)
         result["run_at"] = stamp

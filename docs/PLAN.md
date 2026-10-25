@@ -219,11 +219,11 @@ Fixed rules go in code, judgment goes to the model. dbt removes duplicates, filt
 
 | Tier | Includes |
 | --- | --- |
-| Must have (v1) | Vercel (frontend), Docker API on AWS App Runner/Fargate or Fly.io, managed Postgres (Neon/Supabase free), Sentry free, GitHub Actions CI with a 10-question eval smoke test, uv/Ruff/pyright, pnpm/ESLint/Vitest/Playwright |
+| Must have (v1) | Vercel Hobby for the frontend and the API (FastAPI as a Python function, warehouse bundled), managed Postgres (Neon/Supabase free), Sentry free, GitHub Actions CI with a 10-question eval smoke test, uv/Ruff/pyright, pnpm/ESLint/Vitest/Playwright |
 | Week 7, if on track | Terraform, axe accessibility CI, link-preview images, feedback form |
 | v2 | Langfuse tracing, job queue, follow-up questions, maps, animal shelter data |
 
-Check App Runner's CPU behavior for background tasks before choosing it. Fargate or Fly.io keep the process running.
+Hosting is decided in DECISIONS 2026-10-25: each question runs inside one streamed request (the trace streams to the browser), so nothing depends on background CPU. Hard limits to design for: 300 s per request, 2 GB memory, 500 MB uncompressed function bundle. Fallback: Google Cloud Run in its own project (not the Gemini one).
 
 **Repo layout:** `apps/web` (Next.js), `apps/api` (FastAPI), `data/` (ingest, dbt, registry, quirks), `evals/` (questions, gold SQL, runners, results), `infra/`, `.github/workflows/`.
 
@@ -313,7 +313,7 @@ Models cost $0: every model runs on a free tier, with no paid fallback. The only
 | City data, Census | Free |
 | LLM calls (Gemini, Groq, Cerebras, OpenRouter free tiers) | $0 |
 | Frontend (Vercel Hobby), Postgres free tier, Sentry free, GitHub Actions | Free |
-| Backend hosting | $0–25/month; AWS credits should cover App Runner or Fargate |
+| Backend hosting | $0: Vercel Hobby (4 active CPU-hours, 360 GB-hours memory, 1M invocations a month; usage pauses at the limit, never bills) |
 | Domain (optional) | ~$10–15/year |
 
 **Keeping it within free limits**
@@ -371,7 +371,7 @@ The two risks that matter most are wrong definitions and an untrustworthy eval. 
 - [x] Check whether Austin publishes usable animal shelter data
 - [x] Recheck Houston 311 services
 - [ ] Confirm free-tier limits in AI Studio, the Groq console and Cerebras (Gemini and Groq measured 2026-10-25: Flash-Lite 500 requests/day; Cerebras still open)
-- [ ] Check App Runner background-CPU behavior and that AWS credits cover hosting
+- [x] Pick hosting (App Runner closed to new customers; Vercel Hobby chosen, DECISIONS 2026-10-25)
 - [x] Run the 10-question test on the free candidate models (`docs/model_check/README.md`)
 
 ## Sources

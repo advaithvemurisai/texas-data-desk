@@ -71,6 +71,7 @@ Update this section as each tool lands. Run everything from the repo root.
   - `frozen_snapshot_counts` runs on eval only and checks that staging reproduces the counts in the quirks notes.
 
 - API (`apps/api`, package `tdd_api`): model adapter `tdd_api.llm` (models named `<provider>:<model id>`; keys `GEMINI_API_KEY`, `GROQ_API_KEY` in `.env`), read-only warehouse tool `tdd_api.warehouse` (external file access locked, so SQL can't reach raw Parquet or the eval warehouse).
+- Deploy API (Vercel project `texas-data-desk-api`, run from `apps/api`, needs `vercel login`): `apps/api/scripts/stage_warehouse.sh` (exports the LIVE warehouse to `apps/api/data/warehouse/*.parquet`; never eval), then `cd apps/api && vercel deploy --prod`. Check: `curl https://texas-data-desk-api.vercel.app/api/health`. `apps/api/.vercelignore` replaces `.gitignore` for uploads; keep `.env*` in it. Agent SQL is one SELECT only (`tdd_api.warehouse.check_select_only`).
 - Week-1 model test: `uv run tdd-model-check run [<provider>:<model>…] [--only q01 …]` (live warehouse; one results JSON per model in `docs/model_check/`), `uv run tdd-model-check summary <files…>`. Its 10 questions are throwaway and must not be reused in the eval set.
 
 Planned, not set up yet:

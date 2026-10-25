@@ -3,20 +3,23 @@ name = "tdd-api"
 version = "0.1.0"
 description = "Texas Data Desk backend: model adapter, warehouse tools and agents"
 requires-python = ">=3.12,<3.13"
+# Vercel installs from this file, not the workspace uv.lock, so the runtime-critical packages
+# are pinned to the versions the tests run on.
 dependencies = [
-    "duckdb>=1.1",
+    "duckdb==1.5.6",
+    "fastapi==0.162.0",
     "httpx>=0.28",
     "pydantic>=2.9",
     "pyyaml>=6",
-    "tdd-ingest",
     "typer>=0.15",
 ]
 
 [project.scripts]
 tdd-model-check = "tdd_api.model_check.cli:app"
 
-[tool.uv.sources]
-tdd-ingest = { workspace = true }
+# Vercel: the FastAPI app is apps/api/app.py (project root directory: apps/api).
+[tool.vercel]
+entrypoint = "app:app"
 
 [build-system]
 requires = ["hatchling"]

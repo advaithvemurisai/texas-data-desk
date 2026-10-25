@@ -1,0 +1,9 @@
+# Uploaded by `vercel deploy` from apps/api. The staged warehouse (data/warehouse/*.parquet)
+# must be uploaded, so this file replaces .gitignore for deploys: list exclusions here.
+.venv
+__pycache__
+*.pyc
+tests
+scripts
+.env*
+.vercel
